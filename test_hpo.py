@@ -8,13 +8,14 @@ from torchvision.transforms import ToTensor
 from torch.utils.data import DataLoader
 from model import DynamicNN
 from train_test_loop import train_model, test_model
+import time
 
 
 # Hyperparameter search spaces
 LR_SPACE = [1e-4, 5e-4, 1e-3, 5e-3, 1e-2]
 NUM_HIDDEN_LAYERS_SPACE = [1, 2, 3, 4]
 HIDDEN_DIM_SPACE = [16, 32, 64, 128, 256]
-BATCH_SIZE_SPACE = [16, 32, 64, 128, 256]
+BATCH_SIZE_SPACE = [32, 64, 128, 256]
 
 # Loading the MNIST dataset
 train_data = datasets.MNIST(root='data', train=True, download=True, transform=ToTensor())
@@ -64,5 +65,58 @@ class TestHpo:
         loss_fn = nn.CrossEntropyLoss()
         optimizer = optim.Adam(model.parameters(), lr=LR_SPACE[self.current_lr_index])
 
-        model = train_model(model, train_dataloader, test_dataloader, loss_fn, optimizer, 5)
+        # keep epochs to 3 so that model training does not take too long...
+        model = train_model(model, train_dataloader, test_dataloader, loss_fn, optimizer, 3)
         test_loss, test_acc = test_model(model, test_dataloader, loss_fn)
+
+        return test_acc
+
+
+    def test_grid_search_performance(self): 
+        start_time = time.perf_counter()
+
+        # cache for best performance
+        best_test_acc = 0
+        configuration = None
+
+        # configuration 
+        # since this is an exhaustive search, here we define 4 for loop 
+        # which iterate through each combination of our hyperparameter space
+
+        for lr_index in range(len(LR_SPACE)):
+            for hl_num_space_index in range(len(NUM_HIDDEN_LAYERS_SPACE)):
+                for hl_dim_space_index in range(len(HIDDEN_DIM_SPACE)):
+                    for batch_size_space_index in range(len(BATCH_SIZE_SPACE)):
+                        self.current_lr_index = lr_index
+                        self.current_num_hl_index = hl_num_space_index
+                        self.current_hl_dim_index = hl_dim_space_index
+                        self.current_batch_size_index = batch_size_space_index
+
+                        test_acc= self.get_model_performance()
+
+                        if test_acc > best_test_acc:
+                            
+                            best_test_acc = test_acc
+                            configuration = [
+                                LR_SPACE[lr_index],
+                                NUM_HIDDEN_LAYERS_SPACE[hl_num_space_index],
+                                HIDDEN_DIM_SPACE[hl_dim_space_index],
+                                BATCH_SIZE_SPACE[batch_size_space_index]
+                            ]
+        
+        # Record the end time
+        end_time = time.perf_counter()
+
+        # Calculate the elapsed time
+        elapsed_time = end_time - start_time
+
+        print("HPO using Grid Search complete...")
+        print(f"This algorithm took {elapsed_time:.4f} seconds")
+        print(f"The best test accuracy found was {best_test_acc}")
+        print(f"The configuration that performed the best was : ")
+        print(f"lr = {configuration[0]}")
+        print(f"Number of hidden layers = {configuration[1]}")
+        print(f"Dimension of hidden layers = {configuration[2]}")
+        print(f"Batch Size = {configuration[3]}")
+
+        return elapsed_time, best_test_acc, configuration
