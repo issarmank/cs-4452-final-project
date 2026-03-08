@@ -9,10 +9,11 @@ from torch.utils.data import DataLoader
 from model import DynamicNN
 from train_test_loop import train_model, test_model
 import time
+import random
 
 
 # Hyperparameter search spaces
-LR_SPACE = [1e-4, 5e-4, 1e-3, 5e-3, 1e-2]
+LR_SPACE = [1e-4, 5e-4, 1e-3, 5e-3, 1e-2] 
 NUM_HIDDEN_LAYERS_SPACE = [1, 2, 3, 4]
 HIDDEN_DIM_SPACE = [16, 32, 64, 128, 256]
 BATCH_SIZE_SPACE = [32, 64, 128, 256]
@@ -111,12 +112,62 @@ class TestHpo:
         elapsed_time = end_time - start_time
 
         print("HPO using Grid Search complete...")
+
+        if configuration is not None:
+            print("The configuration that performed the best was : ")
+            print(f"lr = {configuration[0]}")
+            print(f"Number of hidden layers = {configuration[1]}")
+            print(f"Dimension of hidden layers = {configuration[2]}")
+            print(f"Batch Size = {configuration[3]}")
+
+        return elapsed_time, best_test_acc, configuration
+
+    def test_random_combination(self):
+
+        self.current_lr_index = random.randint(0, len(LR_SPACE) - 1)
+        self.current_num_hl_index = random.randint(0, len(NUM_HIDDEN_LAYERS_SPACE) - 1)
+        self.current_hl_dim_index = random.randint(0, len(HIDDEN_DIM_SPACE) - 1)
+        self.current_batch_size_index = random.randint(0, len(BATCH_SIZE_SPACE) - 1)
+
+        test_acc = self.get_model_performance()
+
+        configuration = [
+            LR_SPACE[self.current_lr_index],
+            NUM_HIDDEN_LAYERS_SPACE[self.current_num_hl_index],
+            HIDDEN_DIM_SPACE[self.current_hl_dim_index],
+            BATCH_SIZE_SPACE[self.current_batch_size_index]
+        ]
+
+        return test_acc, configuration
+
+
+    def test_random_search_performance(self):
+
+        start_time = time.perf_counter()
+
+        configuration = None
+        best_test_acc = 0
+
+        for iterations in range(10):
+
+            test_acc, curr_configuration = self.test_random_combination()
+
+            if test_acc > best_test_acc:
+                best_test_acc = test_acc
+                configuration = curr_configuration
+
+        end_time = time.perf_counter()
+        elapsed_time = end_time - start_time
+
+        print("HPO using Random Search complete...")
         print(f"This algorithm took {elapsed_time:.4f} seconds")
         print(f"The best test accuracy found was {best_test_acc}")
-        print(f"The configuration that performed the best was : ")
-        print(f"lr = {configuration[0]}")
-        print(f"Number of hidden layers = {configuration[1]}")
-        print(f"Dimension of hidden layers = {configuration[2]}")
-        print(f"Batch Size = {configuration[3]}")
+
+        if configuration is not None:
+            print("The configuration that performed the best was : ")
+            print(f"lr = {configuration[0]}")
+            print(f"Number of hidden layers = {configuration[1]}")
+            print(f"Dimension of hidden layers = {configuration[2]}")
+            print(f"Batch Size = {configuration[3]}")
 
         return elapsed_time, best_test_acc, configuration
