@@ -52,6 +52,7 @@ class TestHpo:
         return configs
 
     def get_model_performance(self):
+
         batch_size = BATCH_SIZE_SPACE[self.current_batch_size_index]
 
         train_dataloader = DataLoader(train_data, batch_size=batch_size, shuffle=True)
@@ -74,6 +75,7 @@ class TestHpo:
 
 
     def test_grid_search_performance(self): 
+
         start_time = time.perf_counter()
 
         # cache for best performance
