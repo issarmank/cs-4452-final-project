@@ -58,3 +58,5 @@ def test_model(model: torch.nn.Module,
         test_acc /= len(test_data)
 
     print(f"Test Loss: {test_loss:.4f} | Test Accuracy: {test_acc: .2f}%")
+
+    return test_loss, test_acc
