@@ -114,6 +114,8 @@ class TestHpo:
         elapsed_time = end_time - start_time
 
         print("HPO using Grid Search complete...")
+        print(f"This algorithm took {elapsed_time:.4f} seconds")
+        print(f"The best test accuracy found was {best_test_acc:.2f}%")
 
         if configuration is not None:
             print("The configuration that performed the best was : ")
@@ -124,12 +126,24 @@ class TestHpo:
 
         return elapsed_time, best_test_acc, configuration
 
-    def test_random_combination(self):
+    def test_random_combination(self, *args):
 
-        self.current_lr_index = random.randint(0, len(LR_SPACE) - 1)
-        self.current_num_hl_index = random.randint(0, len(NUM_HIDDEN_LAYERS_SPACE) - 1)
-        self.current_hl_dim_index = random.randint(0, len(HIDDEN_DIM_SPACE) - 1)
-        self.current_batch_size_index = random.randint(0, len(BATCH_SIZE_SPACE) - 1)
+        if args:
+            lr_upper_lower_indices = args[0]
+            num_hl_upper_lower_indices = args[1]
+            dim_hl_upper_lower_indices = args[2]
+            batch_size_upper_lower_indices = args[3]
+
+            self.current_lr_index = random.randint(lr_upper_lower_indices[0], lr_upper_lower_indices[1] - 1)
+            self.current_num_hl_index = random.randint(num_hl_upper_lower_indices[0], num_hl_upper_lower_indices[1] - 1)
+            self.current_hl_dim_index = random.randint(dim_hl_upper_lower_indices[0], dim_hl_upper_lower_indices[1] - 1)
+            self.current_batch_size_index = random.randint(batch_size_upper_lower_indices[0], batch_size_upper_lower_indices[1] - 1)
+
+        else:
+            self.current_lr_index = random.randint(0, len(LR_SPACE) - 1)
+            self.current_num_hl_index = random.randint(0, len(NUM_HIDDEN_LAYERS_SPACE) - 1)
+            self.current_hl_dim_index = random.randint(0, len(HIDDEN_DIM_SPACE) - 1)
+            self.current_batch_size_index = random.randint(0, len(BATCH_SIZE_SPACE) - 1)
 
         test_acc = self.get_model_performance()
 
@@ -163,7 +177,7 @@ class TestHpo:
 
         print("HPO using Random Search complete...")
         print(f"This algorithm took {elapsed_time:.4f} seconds")
-        print(f"The best test accuracy found was {best_test_acc}")
+        print(f"The best test accuracy found was {best_test_acc:.2f}%")
 
         if configuration is not None:
             print("The configuration that performed the best was : ")
@@ -173,3 +187,5 @@ class TestHpo:
             print(f"Batch Size = {configuration[3]}")
 
         return elapsed_time, best_test_acc, configuration
+
+
